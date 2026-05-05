@@ -5,7 +5,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -24,4 +24,8 @@ model Speciality {
 
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
+
+  @@index([isDeleted], name: "idx_speciality_isDeleted")
+  @@index([title], name: "idx_speciality_title")
+  @@map("specialities")
 }
