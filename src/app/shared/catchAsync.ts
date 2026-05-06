@@ -7,11 +7,7 @@ export const catchAsync = (
     try {
       fn(req, res, next);
     } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-        error: error,
-      });
+      next(error);
     }
   };
 };
