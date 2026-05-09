@@ -3,8 +3,9 @@ import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { ICreaeteDoctorPayload } from "./user.interface";
 
-const doctorSelect = {
+export const doctorSelect = {
   id: true,
+  userId: true,
   name: true,
   email: true,
   profilePhoto: true,
@@ -54,7 +55,7 @@ const createDoctor = async (payload: ICreaeteDoctorPayload) => {
   for (const specialityId of payload.specialities) {
     const speciality = await prisma.speciality.findUnique({
       where: {
-        id: specialityId,
+        title: specialityId,
       },
     });
     if (!speciality) {
@@ -91,10 +92,10 @@ const createDoctor = async (payload: ICreaeteDoctorPayload) => {
           ...payload.doctor,
         },
       });
-      const doctorSpecialityData = specialities.map((specialiyty) => {
+      const doctorSpecialityData = specialities.map((speciality) => {
         return {
           doctorId: doctorData.id,
-          specialityId: specialiyty.id,
+          specialityId: speciality.id,
         };
       });
 
@@ -122,23 +123,6 @@ const createDoctor = async (payload: ICreaeteDoctorPayload) => {
   }
 };
 
-const getDoctor = async (id: string) => {
-  const doctor = await prisma.doctor.findFirst({
-    where: {
-      id,
-      isDeleted: false,
-    },
-    select: doctorSelect,
-  });
-
-  if (!doctor) {
-    throw new Error("Doctor not found");
-  }
-
-  return doctor;
-};
-
 export const userService = {
   createDoctor,
-  getDoctor,
 };
