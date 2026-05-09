@@ -1,17 +1,7 @@
 import { UserStatus } from "../../../generated/prisma/enums";
 import { auth } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
-
-interface IRegisterPatient {
-  name: string;
-  email: string;
-  password: string;
-}
-
-interface ILoginUser {
-  email: string;
-  password: string;
-}
+import { ILoginUser, IRegisterPatient } from "./auth.interface";
 
 const registerPatient = async (payload: IRegisterPatient) => {
   const { name, email, password } = payload;
