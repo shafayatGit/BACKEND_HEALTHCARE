@@ -64,3 +64,4 @@ export const AuthService = {
   registerPatient,
   loginUser,
 };
+ 
