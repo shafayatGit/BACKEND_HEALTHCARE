@@ -3,6 +3,7 @@ import { prisma } from "./app/lib/prisma";
 import { IndexRoutes } from "./app/routes";
 import globarErrorHandler from "./app/middleware/globalErrorHandler";
 import notFound from "./app/middleware/notFound";
+import cookieParser from "cookie-parser";
 
 const app: Application = express();
 // Enable URL-encoded form data parsing
@@ -10,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(cookieParser());
 
 // Basic route
 app.use("/api/v1", IndexRoutes);
