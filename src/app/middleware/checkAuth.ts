@@ -11,13 +11,16 @@ export const checkAuth =
   (...authRoles: Role[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-        //Checking thr session token first
+      //Checking thr session token first
       const sessionToken = cookieUtils.getCookie(
         req,
         "better-auth.session_token",
       );
       if (!sessionToken) {
-        throw new AppError(status.UNAUTHORIZED, "Unauthorized - Session token missing");
+        throw new AppError(
+          status.UNAUTHORIZED,
+          "Unauthorized - Session token missing",
+        );
       }
       if (sessionToken) {
         const sessionExistInDb = await prisma.session.findFirst({
@@ -79,7 +82,10 @@ export const checkAuth =
       // If session token is not valid, then check for access token
       const accessToken = cookieUtils.getCookie(req, "accessToken");
       if (!accessToken) {
-        throw new AppError(status.UNAUTHORIZED, "Unauthorized - Access token missing");
+        throw new AppError(
+          status.UNAUTHORIZED,
+          "Unauthorized - Access token missing",
+        );
       }
 
       // Verify access token and check user role
@@ -87,11 +93,21 @@ export const checkAuth =
         accessToken,
         envVars.ACCESS_TOKEN_SECRET,
       );
+      //   console.log(verifiedToken.decoded?.role)
       if (!verifiedToken.success) {
-        throw new AppError(status.UNAUTHORIZED, "Unauthorized - Invalid access token");
+        throw new AppError(
+          status.UNAUTHORIZED,
+          "Unauthorized - Invalid access token",
+        );
       }
-      if (authRoles.length > 0 && !authRoles.includes(verifiedToken.data!.role as Role)) {
-        throw new AppError(status.FORBIDDEN, "Forbidden - Insufficient permissions");
+      if (
+        authRoles.length > 0 &&
+        !authRoles.includes(verifiedToken.decoded?.role as Role)
+      ) {
+        throw new AppError(
+          status.FORBIDDEN,
+          "Forbidden - Insufficient permissions",
+        );
       }
       next();
     } catch (error) {
