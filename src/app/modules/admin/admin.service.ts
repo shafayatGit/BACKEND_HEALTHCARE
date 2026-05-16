@@ -21,7 +21,21 @@ const getAdminById = async (id: string) => {
   return result;
 };
 
+const updateAdmin = async (payload: any, id: string) => {
+  const result = await prisma.admin.update({
+    where: {
+      id,
+    },
+    data: payload,
+    include: {
+      user: true,
+    },
+  });
+  return result;
+};
+
 export const adminServices = {
   getAllAdmin,
   getAdminById,
+  updateAdmin,
 };
