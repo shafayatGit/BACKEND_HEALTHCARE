@@ -120,6 +120,26 @@ const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const result = await AuthService.forgetPassword(email);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Password reset email sent successfully",
+  });
+});
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body;
+  const result = await AuthService.resetPassword(email, otp, newPassword);
+  sendResponse(res, {
+    httpStatusCode: status.OK,
+    success: true,
+    message: "Password reset successfully",
+  });
+});
+
 const logOutUser = catchAsync(async (req: Request, res: Response) => {
   const sessionToken = req.cookies["better-auth.session_token"];
   const result = await AuthService.logOutUser(sessionToken);
@@ -152,5 +172,7 @@ export const AuthController = {
   getNewToken,
   changePassword,
   verifyEmail,
+  forgetPassword,
+  resetPassword,
   logOutUser,
 };

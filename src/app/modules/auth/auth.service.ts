@@ -285,6 +285,53 @@ const verifyEmail = async (email: string, otp: string) => {
   return result;
 };
 
+const forgetPassword = async (email: string) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+  if (!isUserExist) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+  const result = await auth.api.requestPasswordResetEmailOTP({
+    body: {
+      email,
+    },
+  });
+  return result;
+};
+
+const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string,
+) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+  if (!isUserExist) {
+    throw new AppError(status.NOT_FOUND, "User not found");
+  }
+
+  const result = await auth.api.resetPasswordEmailOTP({
+    body: {
+      email,
+      otp,
+      password: newPassword,
+    },
+  });
+
+  await prisma.session.deleteMany({
+    where: {
+      userId: isUserExist.id,
+    },
+  });
+  return result;
+};
+
 const logOutUser = async (sessionToken: string) => {
   const result = await auth.api.signOut({
     headers: new Headers({
@@ -300,5 +347,7 @@ export const AuthService = {
   getNewToken,
   changePassword,
   verifyEmail,
+  forgetPassword,
+  resetPassword,
   logOutUser,
 };
