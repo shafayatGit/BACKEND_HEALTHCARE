@@ -128,9 +128,13 @@ export const auth = betterAuth({
       maxAge: 60 * 60 * 60 * 24, // 1 day in seconds
     },
   },
-  // redirectURLs:{
-  //   signIn:""
-  // },
+  redirectURLs: {
+    signIn: `${envVars.BETTER_AUTH_URL}/api/v1/auth/google/success`,
+  },
+  trustedOrigins: [
+    envVars.BETTER_AUTH_URL || "http://localhost:8000",
+    envVars.FRONTEND_URL,
+  ],
   advanced: {
     useSecureCookies: false,
     cookies: {

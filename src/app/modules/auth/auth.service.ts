@@ -12,7 +12,7 @@ import { tokenUtils } from "../../utils/token";
 import { IRequestUser } from "../../interfaces/requestUser.interface";
 import { jwtUtils } from "../../utils/jwt";
 import { envVars } from "../../config/env";
-import { JWTPayload } from "better-auth";
+import { email, JWTPayload } from "better-auth";
 
 const registerPatient = async (payload: IRegisterPatient) => {
   const { name, email, password } = payload;
@@ -363,7 +363,39 @@ const logOutUser = async (sessionToken: string) => {
   return result;
 };
 
-const googleLoginSuccess = async () => {};
+const googleLoginSuccess = async (session: Record<string, any>) => {
+  const isPatientExist = await prisma.patient.findUnique({
+    where: {
+      userId: session.user.id,
+    },
+  });
+
+  if (!isPatientExist) {
+    await prisma.patient.create({
+      data: {
+        userId: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      },
+    });
+  }
+
+  const accessToken = tokenUtils.getAccessToken({
+    userId: session.user.id,
+    role: session.user.role,
+    name: session.user.name,
+  });
+
+  const refreshToken = tokenUtils.getRefreshToken({
+    userId: session.user.id,
+    role: session.user.role,
+    name: session.user.name,
+  });
+  return {
+    accessToken,
+    refreshToken,
+  };
+};
 
 export const AuthService = {
   registerPatient,
