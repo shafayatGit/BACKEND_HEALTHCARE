@@ -3,13 +3,16 @@ import { specialityController } from "./speciality.controller";
 import { Role } from "../../../generated/prisma/enums";
 import { checkAuth } from "../../middleware/checkAuth";
 import { multerUpload } from "../../config/multer.config";
+import { validateRequest } from "../../shared/validateRequest";
+import { specialityValidation } from "./speciality.validation";
 
 const router = Router();
 
 router.post(
   "/",
-  checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
+  // checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   multerUpload.single("file"),
+  validateRequest(specialityValidation.createSpecialityZodSchema),
   specialityController.createSpeciality,
 );
 router.get(
