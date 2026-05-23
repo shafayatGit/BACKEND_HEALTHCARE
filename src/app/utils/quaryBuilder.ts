@@ -57,7 +57,7 @@ export class QueryBuilder<
               const [relation, nestedField] = parts;
 
               const stringFilter: PrismaStringFilter = {
-                contains: searchTerm as string,
+                contains: searchTerm,
                 mode: "insensitive" as const,
               };
 
@@ -70,7 +70,7 @@ export class QueryBuilder<
               const [relation, nestedRelation, nestedField] = parts;
 
               const stringFilter: PrismaStringFilter = {
-                contains: searchTerm as string,
+                contains: searchTerm,
                 mode: "insensitive" as const,
               };
 
@@ -87,7 +87,7 @@ export class QueryBuilder<
           }
           // direct field
           const stringFilter: PrismaStringFilter = {
-            contains: searchTerm as string,
+            contains: searchTerm,
             mode: "insensitive" as const,
           };
 
@@ -148,7 +148,7 @@ export class QueryBuilder<
       // doctorFilterableFields = ['specialties.specialty.title', 'appointmentFee']
       // /doctors?appointmentFee[lt]=100&appointmentFee[gt]=50 => { appointmentFee: { lt: '100', gt: '50' } }
 
-      // /doctors?user.name=John => { user: { name: 'John' } }.
+      // /doctors?user.name=John => { user: { name: 'John' } }
       if (key.includes(".")) {
         const parts = key.split(".");
 

@@ -17,6 +17,6 @@ const createSchedule = () =>
     });
   });
 
-  export const ScheduleControllers = {
-    createSchedule
-  }
+export const ScheduleControllers = {
+  createSchedule,
+};

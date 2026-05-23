@@ -2,7 +2,7 @@ import status from "http-status";
 import AppError from "../../errorHelpers/AppError";
 import { prisma } from "../../lib/prisma";
 import { IUpdateDoctorPayload } from "./doctor.interface";
-import { UserStatus } from "../../../generated/prisma/enums";
+import { Gender, UserStatus } from "../../../generated/prisma/enums";
 // import { IQueryParams } from "../../interfaces/query.interface";
 import { QueryBuilder } from "../../utils/quaryBuilder";
 import {
@@ -174,12 +174,15 @@ const getAllDoctors = async (query: IQueryParams) => {
   }
 
   //Step->3: searching
-
   const searchCondition: Prisma.DoctorWhereInput[] = [];
   if (query.searchTerm) {
     const searchTerm = query.searchTerm;
-    const searchableFields = ["name", "designation"];
-    //if we dont take searchable fields array
+    const searchableFields = [
+      "name",
+      "designation",
+      "specialties.specialty.title",
+    ];
+    //!if we dont take searchable fields array
     // searchCondition.push({
     //   //Searchable Fields
     //   //we will give here those fields which we want to search
@@ -193,19 +196,96 @@ const getAllDoctors = async (query: IQueryParams) => {
     //   },
     // });
 
+    //!nested searching
+    // searchCondition.push({
+    //   specialties: {
+    //     some: {
+    //       specialty: {
+    //         title: {
+    //           contains: searchTerm as string,
+    //           mode: "insensitive",
+    //         },
+    //       },
+    //     },
+    //   },
+    // });
+
     searchableFields.forEach((feild) => {
-      searchCondition.push({
-        [feild]: {
-          contains: searchTerm as string,
-          mode: "insensitive",
-        },
-      });
+      // searchCondition.push({
+      //   [feild]: {
+      //     contains: searchTerm as string,
+      //     mode: "insensitive",
+      //   },
+      // });
+
+      if (feild.includes(".")) {
+        if (feild.split(".").length === 2) {
+          const [relation, nestedField] = feild.split(".");
+          searchCondition.push({
+            [relation]: {
+              [nestedField]: {
+                contains: searchTerm as string,
+                mode: "insensitive",
+              },
+            },
+          });
+        } else if (feild.split(".").length === 3) {
+          const [relation, nestedRelation, nestedField] = feild.split(".");
+          searchCondition.push({
+            [relation]: {
+              some: {
+                [nestedRelation]: {
+                  [nestedField]: {
+                    contains: searchTerm as string,
+                    mode: "insensitive",
+                  },
+                },
+              },
+            },
+          });
+        } else {
+          searchCondition.push({
+            [feild]: {
+              contains: searchTerm as string,
+              mode: "insensitive",
+            },
+          });
+        }
+      } else {
+        searchCondition.push({
+          [feild]: {
+            contains: searchTerm as string,
+            mode: "insensitive",
+          },
+        });
+      }
     });
   }
 
+  //Step->4: filtering
+  const gender = query.gender;
+  const filterableFields = [
+    "designation",
+    "experience",
+    "appointmentFee",
+    "gender",
+  ];
+  const filterConditions: Prisma.DoctorWhereInput = {};
+
   const result = await prisma.doctor.findMany({
     where: {
-      OR: searchCondition.length > 0 ? searchCondition : undefined,
+      //using only search method
+      // OR: searchCondition.length > 0 ? searchCondition : undefined,
+      //using searching with filtering method
+      AND: [
+        // ...(searchCondition.length > 0 ? [{ OR: searchCondition }] : []),
+        {
+          OR: searchCondition.length > 0 ? searchCondition : undefined,
+        },
+        {
+          gender: gender as Gender,
+        },
+      ],
     },
     skip,
     take: limit,
@@ -222,6 +302,14 @@ const getAllDoctors = async (query: IQueryParams) => {
     //   },
     // },
     orderBy,
+    include: {
+      user: true,
+      specialties: {
+        include: {
+          specialty: true,
+        },
+      },
+    },
   });
 
   return {
