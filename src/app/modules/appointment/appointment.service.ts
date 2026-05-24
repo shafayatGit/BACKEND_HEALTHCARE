@@ -66,7 +66,7 @@ const bookAppointmentWithPayLater = async (
       },
     });
 
-    //TODO:Payment intergration will be here and payment status will be updated
+    //TODO:Payment intergration will be here and payment status will be updated.
 
     return appointmentData;
   });
