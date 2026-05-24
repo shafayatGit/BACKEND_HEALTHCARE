@@ -30,25 +30,15 @@ const getMyAppointments = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const changeAppointmentStatus = catchAsync(
-  async (req: Request, res: Response) => {
-    const appointmentId = req.params.id;
-    const payload = req.body;
-    const user = req.user;
-
-    const updatedAppointment = await AppointmentService.changeAppointmentStatus(
-      appointmentId as string,
-      payload,
-      user,
-    );
-    sendResponse(res, {
-      success: true,
-      httpStatusCode: status.OK,
-      message: "Appointment status updated successfully",
-      data: updatedAppointment,
-    });
-  },
-);
+const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
+  const appointments = await AppointmentService.getAllAppointments();
+  sendResponse(res, {
+    success: true,
+    httpStatusCode: status.OK,
+    message: "All appointments retrieved successfully",
+    data: appointments,
+  });
+});
 
 const getMySingleAppointment = catchAsync(
   async (req: Request, res: Response) => {
@@ -68,15 +58,25 @@ const getMySingleAppointment = catchAsync(
   },
 );
 
-const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
-  const appointments = await AppointmentService.getAllAppointments();
-  sendResponse(res, {
-    success: true,
-    httpStatusCode: status.OK,
-    message: "All appointments retrieved successfully",
-    data: appointments,
-  });
-});
+const changeAppointmentStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const appointmentId = req.params.id;
+    const payload = req.body;
+    const user = req.user;
+
+    const updatedAppointment = await AppointmentService.changeAppointmentStatus(
+      appointmentId as string,
+      payload,
+      user,
+    );
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.OK,
+      message: "Appointment status updated successfully",
+      data: updatedAppointment,
+    });
+  },
+);
 
 const bookAppointmentWithPayLater = catchAsync(
   async (req: Request, res: Response) => {
