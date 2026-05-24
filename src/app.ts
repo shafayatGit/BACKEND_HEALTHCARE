@@ -9,7 +9,8 @@ import path from "path";
 import { envVars } from "./app/config/env";
 import qs from "qs";
 import { PaymentController } from "./app/modules/payment/payment.controller";
-
+import cron from "node-cron";
+import { AppointmentService } from "./app/modules/appointment/appointment.service";
 const app: Application = express();
 app.set("query parser", (str: string) => qs.parse(str));
 
@@ -42,6 +43,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+
+cron.schedule(
+  "*/25 * * * *", // Run every 25 minutes
+  async () => {
+    try {
+      console.log("Running cron job to cancel unpaid appointments");
+      await AppointmentService.cancelUnpaidAppointments();
+    } catch (error) {
+      console.error(error);
+    }
+  },
+);
 
 // Basic route
 app.use("/api/v1", IndexRoutes);
