@@ -1,10 +1,18 @@
 import { uuidv7 } from "zod";
-import { AppointmentStatus, Role } from "../../../generated/prisma/enums";
+import {
+  AppointmentStatus,
+  PaymentStatus,
+  Role,
+} from "../../../generated/prisma/enums";
 import { IRequestUser } from "../../interfaces/requestUser.interface";
 import { prisma } from "../../lib/prisma";
 import { IBookAppointmentPayload } from "./appointment.interface";
+import { stripe } from "../../config/stripe.config";
+import { envVars } from "../../config/env";
+import AppError from "../../errorHelpers/AppError";
+import status from "http-status";
 
-const bookAppointmentWithPayLater = async (
+const bookAppointment = async (
   payload: IBookAppointmentPayload,
   user: IRequestUser,
 ) => {
@@ -60,11 +68,181 @@ const bookAppointmentWithPayLater = async (
     });
 
     //TODO:Payment intergration will be here and payment status will be updated.
+    const transactionId = String(uuidv7());
+    const paymentData = await tx.payment.create({
+      data: {
+        transactionId,
+        amount: doctorData.appointmentFee,
+        appointmentId: appointmentData.id,
+      },
+    });
 
-    return appointmentData;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "bdt",
+            product_data: {
+              name: `Appointment with Dr.${doctorData.name} Fee`,
+            },
+            unit_amount: doctorData.appointmentFee * 120,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        appointmentId: appointmentData.id,
+        paymentId: paymentData.id,
+      },
+      success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
+      cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments`,
+    });
+
+    return { appointmentData, paymentData, paymentUrl: session.url };
   });
 
+  return {
+    appointment: result.appointmentData,
+    payment: result.paymentData,
+    paymentUrl: result.paymentUrl,
+  };
+};
+
+//Book appointment but pay later
+const bookAppointmentWithPayLater = async (
+  payload: IBookAppointmentPayload,
+  user: IRequestUser,
+) => {
+  const patientData = await prisma.patient.findUniqueOrThrow({
+    where: {
+      email: user.email,
+    },
+  });
+  const doctorData = await prisma.doctor.findUniqueOrThrow({
+    where: {
+      id: payload.doctorId,
+      isDeleted: false,
+    },
+  });
+
+  const scheduleData = await prisma.schedule.findUniqueOrThrow({
+    where: {
+      id: payload.scheduleId,
+    },
+  });
+
+  const doctorSchedule = await prisma.doctorSchedules.findUniqueOrThrow({
+    where: {
+      doctorId_scheduleId: {
+        doctorId: doctorData.id,
+        scheduleId: scheduleData.id,
+      },
+    },
+  });
+
+  const videoCallingId = String(uuidv7());
+
+  const result = await prisma.$transaction(async (tx) => {
+    const appointmentData = await tx.appointment.create({
+      data: {
+        patientId: patientData.id,
+        doctorId: payload.doctorId,
+        scheduleId: doctorSchedule.scheduleId,
+        videoCallingId,
+      },
+    });
+
+    await tx.doctorSchedules.update({
+      where: {
+        doctorId_scheduleId: {
+          doctorId: payload.doctorId,
+          scheduleId: payload.scheduleId,
+        },
+      },
+      data: {
+        isBooked: true,
+      },
+    });
+
+    const transactionId = String(uuidv7());
+    const paymentData = await tx.payment.create({
+      data: {
+        transactionId,
+        amount: doctorData.appointmentFee,
+        appointmentId: appointmentData.id,
+      },
+    });
+
+    return {
+      appointment: appointmentData,
+      payment: paymentData,
+    };
+  });
   return result;
+};
+
+const initiatePayment = async (appointmentId: string, user: IRequestUser) => {
+  const patintData = await prisma.patient.findUniqueOrThrow({
+    where: {
+      email: user.email,
+    },
+  });
+
+  const appointmentData = await prisma.appointment.findUniqueOrThrow({
+    where: {
+      id: appointmentId,
+      patientId: patintData.id,
+    },
+    include: {
+      payment: true,
+      doctor: true,
+    },
+  });
+
+  if (appointmentData.payment?.status === PaymentStatus.PAID) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "You have already paid for this appointment",
+    );
+  }
+
+  if (appointmentData.status === AppointmentStatus.CANCELED) {
+    throw new AppError(
+      status.BAD_REQUEST,
+      "You have already canceled this appointment",
+    );
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "bdt",
+          product_data: {
+            name: `Appointment with Dr.${appointmentData.doctor.name} Fee`,
+          },
+          unit_amount: appointmentData.doctor.appointmentFee * 120,
+        },
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      appointmentId: appointmentData.id,
+      paymentId: appointmentData.payment?.id as string,
+    },
+    success_url: `${envVars.FRONTEND_URL}/dashboard/payment/payment-success`,
+    cancel_url: `${envVars.FRONTEND_URL}/dashboard/appointments`,
+  });
+
+  return {
+    appointment: appointmentData,
+    payment: appointmentData.payment,
+    paymentUrl: session.url,
+  };
 };
 
 const getMyAppointments = async (user: IRequestUser) => {
@@ -206,8 +384,6 @@ const getMySingleAppointment = async (
   return appointment;
 };
 
-const initiatePayment = async (appointmentId: string, user: IRequestUser) => {};
-
 const cancelUnpaidAppointments = async (
   appointmentId: string,
   appointmentStatus: AppointmentStatus,
@@ -215,6 +391,7 @@ const cancelUnpaidAppointments = async (
 ) => {};
 
 export const AppointmentService = {
+  bookAppointment,
   changeAppointmentStatus,
   getMyAppointments,
   getMySingleAppointment,

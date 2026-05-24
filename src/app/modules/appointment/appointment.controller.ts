@@ -7,10 +7,7 @@ import { AppointmentService } from "./appointment.service";
 const bookAppointment = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const user = req.user;
-  const appointment = await AppointmentService.bookAppointmentWithPayLater(
-    payload,
-    user,
-  );
+  const appointment = await AppointmentService.bookAppointment(payload, user);
   sendResponse(res, {
     success: true,
     httpStatusCode: status.CREATED,
@@ -18,6 +15,23 @@ const bookAppointment = catchAsync(async (req: Request, res: Response) => {
     data: appointment,
   });
 });
+
+const bookAppointmentWithPayLater = catchAsync(
+  async (req: Request, res: Response) => {
+    const payload = req.body;
+    const user = req.user;
+    const appointment = await AppointmentService.bookAppointmentWithPayLater(
+      payload,
+      user,
+    );
+    sendResponse(res, {
+      success: true,
+      httpStatusCode: status.CREATED,
+      message: "Appointment booked successfully with Pay Later option",
+      data: appointment,
+    });
+  },
+);
 
 const getMyAppointments = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
@@ -74,23 +88,6 @@ const changeAppointmentStatus = catchAsync(
       httpStatusCode: status.OK,
       message: "Appointment status updated successfully",
       data: updatedAppointment,
-    });
-  },
-);
-
-const bookAppointmentWithPayLater = catchAsync(
-  async (req: Request, res: Response) => {
-    const payload = req.body;
-    const user = req.user;
-    const appointment = await AppointmentService.bookAppointmentWithPayLater(
-      payload,
-      user,
-    );
-    sendResponse(res, {
-      success: true,
-      httpStatusCode: status.CREATED,
-      message: "Appointment booked successfully with Pay Later option",
-      data: appointment,
     });
   },
 );
