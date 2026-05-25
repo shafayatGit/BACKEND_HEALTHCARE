@@ -1,4 +1,4 @@
-import { uuidv7 } from "zod";
+import { v7 as uuidv7 } from "uuid";
 import {
   AppointmentStatus,
   PaymentStatus,
@@ -87,7 +87,7 @@ const bookAppointment = async (
             product_data: {
               name: `Appointment with Dr.${doctorData.name} Fee`,
             },
-            unit_amount: doctorData.appointmentFee * 120,
+            unit_amount: doctorData.appointmentFee * 100,
           },
           quantity: 1,
         },
@@ -225,7 +225,7 @@ const initiatePayment = async (appointmentId: string, user: IRequestUser) => {
           product_data: {
             name: `Appointment with Dr.${appointmentData.doctor.name} Fee`,
           },
-          unit_amount: appointmentData.doctor.appointmentFee * 120,
+          unit_amount: appointmentData.doctor.appointmentFee * 100,
         },
         quantity: 1,
       },
