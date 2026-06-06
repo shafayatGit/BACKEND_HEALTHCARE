@@ -10,14 +10,14 @@ const router = Router();
 
 router.post(
   "/",
-  // checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
+  checkAuth(Role.ADMIN, Role.SUPER_ADMIN),
   multerUpload.single("file"),
   validateRequest(specialityValidation.createSpecialityZodSchema),
   specialityController.createSpeciality,
 );
 router.get(
   "/",
-  // checkAuth(Role.ADMIN, Role.SUPER_ADMIN, Role.DOCTOR, Role.PATIENT),
+  checkAuth(Role.ADMIN, Role.SUPER_ADMIN, Role.DOCTOR, Role.PATIENT),
   specialityController.getAllSpecialities,
 );
 router.delete("/:id", specialityController.deleteSpeciality);

@@ -24,6 +24,7 @@ export const auth = betterAuth({
       clientSecret: envVars.GOOGLE_CLIENT_SECRET,
 
       mapProfileToUser() {
+        // This function will be called after successful authentication with Google, and the returned object will be used to create or update the user in the database.
         return {
           role: Role.PATIENT,
           status: UserStatus.ACTIVE,
@@ -73,7 +74,7 @@ export const auth = betterAuth({
   },
 
   plugins: [
-    bearer(),
+    bearer(), // For API authentication using Bearer tokens (access tokens)
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
