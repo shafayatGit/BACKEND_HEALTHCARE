@@ -37,7 +37,7 @@ const handleStripeWebhookEvent = catchAsync(
     }
 
     try {
-      const result = await PaymentService.handleStripeWebhookEvent(event);
+      const result = await PaymentService.handlerStripeWebhookEvent(event);
 
       sendResponse(res, {
         httpStatusCode: status.OK,
